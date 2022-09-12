@@ -1,5 +1,6 @@
 package pocketbase.kotlin
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -16,23 +17,30 @@ class UserService(
 
         val enrichedHeaders = emptyMap<String, String>().toMutableMap()
         enrichedHeaders["Authorization"] = ""
+        enrichedHeaders["Content-Type"] = "application/json"
 
-        val objectMapper = ObjectMapper()
-        val requestBody: String = objectMapper
+        val requestBody: String = ObjectMapper()
             .writeValueAsString(enrichedBody)
 
-        val c = HttpClient.newBuilder().build();
+        val httpClient = HttpClient.newBuilder().build();
 
-        val request = HttpRequest.newBuilder()
+        val requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create("${client.baseUrl}/api/users/auth-via-email"))
-            .header("Content-Type", "application/json")
+
+        enrichedHeaders.forEach{(header, value) ->
+            requestBuilder.header(header, value)
+        }
+
+        val request = requestBuilder
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build()
 
-        val response = c.send(request, HttpResponse.BodyHandlers.ofString());
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        println(response.body())
+        val userObject = ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .readValue(response.body(), UserModel::class.java)
 
-        return UserAuth("", UserModel(), emptyMap())
+        return UserAuth(userObject.token, userObject, emptyMap())
     }
+
 }
