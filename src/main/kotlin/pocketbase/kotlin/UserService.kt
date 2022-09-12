@@ -21,8 +21,6 @@ class UserService(
         val requestBody: String = objectMapper
             .writeValueAsString(enrichedBody)
 
-        println(requestBody)
-
         val c = HttpClient.newBuilder().build();
 
         val request = HttpRequest.newBuilder()
