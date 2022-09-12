@@ -1,5 +1,7 @@
 package pocketbase.kotlin
 
-class PocketBase(baseUrl: String) {
-    val users: UserService = UserService()
+class PocketBase(
+    val baseUrl: String
+) {
+    val users: UserService = UserService(this)
 }
