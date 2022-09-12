@@ -16,13 +16,13 @@ class UserService(
         enrichedBody["password"] = password
 
         val enrichedHeaders = emptyMap<String, String>().toMutableMap()
-        enrichedHeaders["Authorization"] = ""
         enrichedHeaders["Content-Type"] = "application/json"
 
-        val requestBody: String = ObjectMapper()
-            .writeValueAsString(enrichedBody)
+        val objectMapper = ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
-        val httpClient = HttpClient.newBuilder().build();
+        val requestBody: String = objectMapper.writeValueAsString(enrichedBody)
+
+        val httpClient = HttpClient.newBuilder().build()
 
         val requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create("${client.baseUrl}/api/users/auth-via-email"))
@@ -35,10 +35,9 @@ class UserService(
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build()
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
 
-        val userObject = ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .readValue(response.body(), UserModel::class.java)
+        val userObject = objectMapper.readValue(response.body(), UserModel::class.java)
 
         return UserAuth(userObject.token, userObject, emptyMap())
     }
