@@ -1,5 +1,6 @@
 package pocketbase.kotlin
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import java.net.URI
 import java.net.http.HttpClient
@@ -10,6 +11,22 @@ import com.fasterxml.jackson.databind.ObjectMapper
 class UserService(
     private val client: PocketBase
 ) {
+
+    fun listAuthMethods(): Map<Any, Any>? {
+        val httpClient = HttpClient.newBuilder().build()
+
+        val requestBuilder = HttpRequest.newBuilder()
+            .uri(URI.create("${client.baseUrl}/api/users/auth-methods"))
+
+        val request = requestBuilder
+            .GET()
+            .build()
+
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+
+        return ObjectMapper().readValue(response.body(), object: TypeReference<Map<Any, Any>>() {})
+    }
+
     fun authViaEmail(email: String, password: String): UserAuth {
         val enrichedBody = emptyMap<String, Any>().toMutableMap()
         enrichedBody["email"] = email
