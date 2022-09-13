@@ -7,6 +7,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.net.ConnectException
 
 class UserService(
     private val client: PocketBase
@@ -22,12 +23,23 @@ class UserService(
             .GET()
             .build()
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        return try {
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+            if(response.statusCode() > 200){
+                throw Exception("Something went wrong while trying to list auth methods")
+            }
 
-        return ObjectMapper().readValue(response.body(), object: TypeReference<Map<Any, Any>>() {})
+            ObjectMapper().readValue(response.body(), object: TypeReference<Map<Any, Any>>() {})
+        }catch (e: ConnectException){
+            println("Was not able to connect to the PocketBase server")
+            null
+        }catch (e: Exception){
+            println(e.message)
+            null
+        }
     }
 
-    fun authViaEmail(email: String, password: String): UserAuth {
+    fun authViaEmail(email: String, password: String): UserAuth? {
         val enrichedBody = emptyMap<String, Any>().toMutableMap()
         enrichedBody["email"] = email
         enrichedBody["password"] = password
@@ -52,11 +64,20 @@ class UserService(
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build()
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        return try{
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+            if(response.statusCode() > 200){
+                throw Exception("Something went wrong while trying to authenticate via email")
+            }
 
-        val userObject = objectMapper.readValue(response.body(), UserModel::class.java)
-
-        return UserAuth(userObject.token, userObject, emptyMap())
+            val userObject = objectMapper.readValue(response.body(), UserModel::class.java)
+            UserAuth(userObject.token, userObject, emptyMap())
+        }catch (e: ConnectException){
+            println("Was not able to connect to the PocketBase server")
+            null
+        }catch (e: Exception){
+            println(e.message)
+            null
+        }
     }
-
 }
