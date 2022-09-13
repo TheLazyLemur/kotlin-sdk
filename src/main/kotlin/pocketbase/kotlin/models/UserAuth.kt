@@ -1,4 +1,4 @@
-package pocketbase.kotlin
+package pocketbase.kotlin.models
 
 class UserAuth(
     val token: String = "",

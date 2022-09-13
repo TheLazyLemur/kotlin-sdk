@@ -1,4 +1,4 @@
-package pocketbase.kotlin
+package pocketbase.kotlin.services
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -7,12 +7,15 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import com.fasterxml.jackson.databind.ObjectMapper
+import pocketbase.kotlin.PocketBase
+import pocketbase.kotlin.models.UserAuth
+import pocketbase.kotlin.models.UserModel
+import java.lang.IllegalArgumentException
 import java.net.ConnectException
 
 class UserService(
     private val client: PocketBase
 ) {
-
     fun listAuthMethods(): Map<Any, Any>? {
         val httpClient = HttpClient.newBuilder().build()
 
@@ -39,7 +42,15 @@ class UserService(
         }
     }
 
-    fun authViaEmail(email: String, password: String): UserAuth? {
+    fun authViaEmail(email: String?, password: String?): UserAuth? {
+        if(email.isNullOrEmpty()){
+           throw IllegalArgumentException("Email cannot be empty or null")
+        }
+
+        if (password.isNullOrEmpty()){
+            throw IllegalArgumentException("Password cannot be empty or null")
+        }
+
         val enrichedBody = emptyMap<String, Any>().toMutableMap()
         enrichedBody["email"] = email
         enrichedBody["password"] = password
